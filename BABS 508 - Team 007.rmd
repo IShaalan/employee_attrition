@@ -1,0 +1,177 @@
+---
+title: "BABS 508 - Team 007"
+Team: Team 007
+Authors: Isha Goyal, Islam Shaalan, Priyanshu Najar, Syed Arsalan Raza
+Date: "Last modified `r Sys.Date()`"
+output: 
+    html_document:
+        toc: true
+        toc_depth: 2
+        number_sections: true
+---
+
+```{r global options, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+
+# Loading Libraries
+```{r Loading Packages}
+library(ggplot2)
+library(Hmisc)
+library(dplyr)
+library(rms)
+library(car)
+library(visdat)
+library(readxl)
+library(finalfit)
+```
+
+# Loading Employee Attrition Dataset: `attrition_data`
+
+```{r Loading file and setting env variables}
+setwd("/Users/islamshaalan/OneDrive - UBC/Courses/P3/BABS 508/BABS 508 - Group Project")
+getwd()
+
+attrition_data <- read_excel("data/Attrition Sample 7.xlsx")
+```
+
+Displaying sample of the `attr_df`
+
+```{r displaying_attr_df}
+head(attrition_data)
+```
+Dataset shape is `dim(attrition_data)`
+
+### Draw a histogram of the distribution of attrition variable
+
+```{r plotting_attrition_distribution}
+ggplot(data = attrition_data, aes(x = Age, color = Attrition)) + geom_histogram(bins = 20)
+```
+Data types and recoding
+```{r converting_to_categorical}
+attrition_data$BusinessTravel <- factor(attrition_data$BusinessTravel)
+attrition_data$Department <- factor(attrition_data$Department)
+attrition_data$EducationField <- factor(attrition_data$EducationField)
+attrition_data$Gender <- factor(attrition_data$Gender)
+attrition_data$JobRole <- factor(attrition_data$JobRole)
+attrition_data$Attrition = ifelse(attrition_data$Attrition=='No',0,1)
+```
+
+```{r describe}
+desc_attrition_data <- describe(attrition_data)
+html(desc_attrition_data, size=80, scroll = TRUE)
+
+```
+
+```{r check_duplicates}
+```
+
+```{r check_for_missing_data}
+attrition_data %>% missing_plot(title='Attrition dataset missing values')
+```
+
+```{r data_distribution}
+hist(attrition_data)
+```
+
+```{r }
+p <- plot(desc_attrition_data)
+p$Continuous
+```
+
+
+
+BIVARIATE DATA DISTRIBUTION
+```{r cross tab}
+xtabs(~Attrition + Age, data = attrition_data)
+xtabs(~Attrition + YearsSinceLastPromotion, data = attrition_data)
+xtabs(~Attrition + YearsWithCurrManager, data = attrition_data)
+xtabs(~Attrition + PercentSalaryHike, data = attrition_data)
+xtabs(~Attrition + WorkLifeBalance, data = attrition_data)
+xtabs(~Attrition + Gender, data = attrition_data)
+xtabs(~Attrition + Education, data = attrition_data)
+xtabs(~Attrition + JobRole, data = attrition_data)
+xtabs(~Attrition + JobLevel, data = attrition_data)
+```
+
+```{r selecting columns}
+attrition.sel <- attrition_data %>% select(Age, BusinessTravel, DailyRate, Department,Education, EducationField,	Gender,	
+YearsSinceLastPromotion, YearsWithCurrManager, JobLevel,	JobRole,	JobSatisfaction,	MonthlyIncome,
+MonthlyRate,	PercentSalaryHike,	PerformanceRating,	TrainingTimesLastYear,	WorkLifeBalance,	Attrition)
+```
+
+```{r assessing_linearity}
+a <- ggplot(attrition.sel, aes(x = Age, y = Attrition)) +
+  histSpikeg(Attrition ~ Age, lowess = TRUE, data = attrition.sel) +
+  labs(x = "\nAge percentile", y = "Probability(Attrition)\n")
+
+b <- ggplot(attrition.sel, aes(x = DailyRate, y = Attrition)) +
+  histSpikeg(Attrition ~ DailyRate, lowess = TRUE, data = attrition.sel) +
+  labs(x = "\nDailyRate percentile", y = "Probability(Attrition)\n")
+
+c <- ggplot(attrition.sel, aes(x = YearsSinceLastPromotion, y = Attrition)) +
+  histSpikeg(Attrition ~ YearsSinceLastPromotion, lowess = TRUE, data = attrition.sel) +
+  labs(x = "\nYearsSinceLastPromotion percentile", y = "Probability(Attrition)\n")
+
+d <- ggplot(attrition.sel, aes(x = YearsWithCurrManager, y = Attrition)) +
+  histSpikeg(Attrition ~ YearsWithCurrManager, lowess = TRUE, data = attrition.sel) +
+  labs(x = "\nYearsWithCurrManager percentile", y = "Probability(Attrition)\n")
+
+e <- ggplot(attrition.sel, aes(x = MonthlyIncome, y = Attrition)) +
+  histSpikeg(Attrition ~ MonthlyIncome, lowess = TRUE, data = attrition.sel) +
+  labs(x = "\nMonthlyIncome percentile", y = "Probability(Attrition)\n")
+
+f <- ggplot(attrition.sel, aes(x = MonthlyRate, y = Attrition)) +
+  histSpikeg(Attrition ~ MonthlyRate, lowess = TRUE, data = attrition.sel) +
+  labs(x = "\nMonthlyRate percentile", y = "Probability(Attrition)\n")
+
+g <- ggplot(attrition.sel, aes(x = PercentSalaryHike, y = Attrition)) +
+  histSpikeg(Attrition ~ PercentSalaryHike, lowess = TRUE, data = attrition.sel) +
+  labs(x = "\nPercetageSalaryHike percentile", y = "Probability(Attrition)\n")
+
+a
+b
+c
+d
+e
+f
+g
+
+```
+- Transform Data to correct datatype              (DONE)
+- Check for duplicates 
+- univariate exploration
+    - Visualize NAs (final_fit or vis_dat)        (DONE)
+    - histogram
+    - Check for outliers
+    - Check for inaccurate inputs
+- bivariate exploration
+    - correlations  (vis_cor)
+    - histspike data distribution                 (DONE)
+    - scatter plots
+    - xtabs                                       (DONE)
+- Assumption Testing
+    -
+    -
+    -
+    - vif test
+- BIAS??
+- Model
+    - Model validation
+    - Interpretation
+- Visualization
+
+
+| Task 	| Start Date 	| End Date 	| Responsible 	| Contributer 	|
+|---	|---	|---	|---	|---	|
+| Transform Data to correct datatype 	|  	|  	|  	|  	|
+| Check for duplicates 	|  	|  	|  	|  	|
+| univariate exploration - Visualize NAs (final_fit or vis_dat) - histogram - HIMSC - Check for inaccurate inputs - Check for outliers 	|  	|  	|  	|  	|
+| bivariate exploration - correlations  (vis_cor) - scatter plot 	|  	|  	|  	|  	|
+| Assumption Testing - - -  -  	|  	|  	|  	|  	|
+| BIAS?? 	|  	|  	|  	|  	|
+| Model 	|  	|  	|  	|  	|
+| Model validation 	|  	|  	|  	|  	|
+| Visualization 	|  	|  	|  	|  	|
+| Interpretation 	|  	|  	|  	|  	|
+|  	|  	|  	|  	|  	|
